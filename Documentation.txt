@@ -1,0 +1,27 @@
+DATABASE:
+
+Date : {
+    Year: int
+    Month: int
+    Day: int
+}
+
+each item: {
+    Shop: string
+    Name: string
+    DiscountAmountInProc: int,
+    CostBeforeDiscount: float,
+    CostAfterDiscount: float,
+    DiscoundEndDate: Date,
+    ItemAddedDate: Date,
+    ImportedFromWhere?: string,
+    AutoImported?: boolean, 
+}
+
+Info:
+we get from https://www.raskakcija.lt
+
+API:
+GetAkcija (NameOfItem: string) -> (ListOfAkcijosWithThatItem: List)
+GetAkcijasFromShop (NameOfShop: string) -> (ListOfAkcijosfromThatShop: List)
+AddAkcija (item) -> boolean
