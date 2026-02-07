@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { Magazine, Page, ProductAkcija } from '../Types/DiscountTypes';
+import { Magazine, Page, ProductAkcija } from '../types/DiscountTypes';
 import e from 'express';
 
 const db = new Database(path.join(__dirname, '..', 'Storage.db'));
