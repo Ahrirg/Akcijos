@@ -38,7 +38,7 @@ async function extractPagesFromMagazine(Url: string) {
   const imageUrls = findImageUrls(htmlRawText);
 
   const curMagazine: Magazine = {
-    AddedTime: "2025",
+    AddedTime: new Date(),
     URL: Url,
   }
 
@@ -55,8 +55,8 @@ async function extractPagesFromMagazine(Url: string) {
     );
 
     const curPage: Page = {
-      Parsed: 0,
-      AddedTime: "2025",
+      Parsed: false,
+      AddedTime: new Date(),
       ImageUUID: ImageUUID,
       MagazineId: magazineId,
     }

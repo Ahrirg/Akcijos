@@ -10,14 +10,14 @@ db.pragma('foreign_keys = ON');
 db.exec(`
   CREATE TABLE IF NOT EXISTS Magazine (
     MagazineID INTEGER PRIMARY KEY AUTOINCREMENT,
-    EndTime TEXT, -- Nullable
+    EndTime TEXT,
     AddedTime TEXT NOT NULL,
     URL TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS Page (
     PageId INTEGER PRIMARY KEY AUTOINCREMENT,
-    EndTime TEXT, -- Nullable
+    EndTime TEXT,
     AddedTime TEXT NOT NULL,
     ImageUUID TEXT NOT NULL,
     Parsed INTEGER DEFAULT 0,
@@ -48,10 +48,10 @@ export function insertMagazine(mag: Magazine): number | bigint {
     INSERT INTO Magazine (EndTime, AddedTime, URL) 
     VALUES (@EndTime, @AddedTime, @URL)
   `);
-  // If EndTime is undefined, SQLite will insert NULL
   return stmt.run({
     ...mag,
-    EndTime: mag.EndTime ?? null 
+    EndTime: mag.EndTime?.toISOString() ?? null,
+    AddedTime: mag.AddedTime.toISOString()
   }).lastInsertRowid;
 }
 
@@ -62,7 +62,9 @@ export function insertPage(page: Page): number | bigint {
   `);
   return stmt.run({
     ...page,
-    EndTime: page.EndTime ?? null
+    EndTime: page.EndTime?.toISOString() ?? null,
+    AddedTime: page.AddedTime.toISOString(),
+    Parsed: page.Parsed ? 1 : 0
   }).lastInsertRowid;
 }
 
@@ -72,25 +74,47 @@ export function insertProduct(product: ProductAkcija): number | bigint {
     (ProductName, ShopName, DiscountSizeProc, CostBeforeDiscount, CostAfterDiscount, EndTime, AddedTime, PageId)
     VALUES (@ProductName, @ShopName, @DiscountSizeProc, @CostBeforeDiscount, @CostAfterDiscount, @EndTime, @AddedTime, @PageId)
   `);
-  return stmt.run(product).lastInsertRowid;
+  return stmt.run({
+    ...product,
+    EndTime: product.EndTime.toISOString(),
+    AddedTime: product.AddedTime.toISOString()
+  }).lastInsertRowid;
 }
 
 export function getPagesByMagazine(magazineId: number): Page[] {
-  return db.prepare('SELECT * FROM Page WHERE MagazineId = ?').all(magazineId) as Page[];
+  const rows = db.prepare('SELECT * FROM Page WHERE MagazineId = ?').all(magazineId) as any[];
+  return rows.map(row => ({
+    ...row,
+    EndTime: row.EndTime ? new Date(row.EndTime) : undefined,
+    AddedTime: new Date(row.AddedTime),
+    Parsed: row.Parsed === 1
+  }));
 }
 
 export function getUnparsedPages(): Page[] {
-  return db.prepare('SELECT * FROM Page WHERE Parsed = 0').all() as Page[];
+  const rows = db.prepare('SELECT * FROM Page WHERE Parsed = 0').all() as any[];
+  return rows.map(row => ({
+    ...row,
+    EndTime: row.EndTime ? new Date(row.EndTime) : undefined,
+    AddedTime: new Date(row.AddedTime),
+    Parsed: false
+  }));
 }
 
 export function getActiveProducts(offset: number, limit: number): ProductAkcija[] {
   const now = new Date().toISOString();
-  return db.prepare(`
+  const rows = db.prepare(`
     SELECT * FROM ProductAkcija 
     WHERE EndTime > ? 
     ORDER BY AddedTime DESC 
     LIMIT ? OFFSET ?
-  `).all(now, limit, offset) as ProductAkcija[];
+  `).all(now, limit, offset) as any[];
+
+  return rows.map(row => ({
+    ...row,
+    EndTime: new Date(row.EndTime),
+    AddedTime: new Date(row.AddedTime)
+  }));
 }
 
 export default db;
