@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { Magazine, Page, ProductAkcija } from '../types/DiscountTypes';
-import e from 'express';
 
 const db = new Database(path.join(__dirname, '..', 'Storage.db'));
 
@@ -27,6 +26,7 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS ProductAkcija (
+    ProductId INTEGER PRIMARY KEY AUTOINCREMENT,
     ProductName TEXT,
     ShopName TEXT,
     DiscountSizeProc REAL,
@@ -35,8 +35,8 @@ db.exec(`
     EndTime TEXT,
     AddedTime TEXT,
     PageId INTEGER,
-    PRIMARY KEY (ProductName, ShopName),
-    FOREIGN KEY (PageId) REFERENCES Page(PageId) ON DELETE CASCADE
+    FOREIGN KEY (PageId) REFERENCES Page(PageId) ON DELETE CASCADE,
+    UNIQUE(ProductName, ShopName)
   );
 
   CREATE INDEX IF NOT EXISTS idx_page_mag ON Page(MagazineId);
@@ -59,13 +59,13 @@ export function insertPage(page: Page): number | bigint {
   return stmt.run(page).lastInsertRowid;
 }
 
-export function insertProduct(product: ProductAkcija): void {
+export function insertProduct(product: ProductAkcija): number | bigint {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO ProductAkcija 
     (ProductName, ShopName, DiscountSizeProc, CostBeforeDiscount, CostAfterDiscount, EndTime, AddedTime, PageId)
     VALUES (@ProductName, @ShopName, @DiscountSizeProc, @CostBeforeDiscount, @CostAfterDiscount, @EndTime, @AddedTime, @PageId)
   `);
-  stmt.run(product);
+  return stmt.run(product).lastInsertRowid;
 }
 
 export function getPagesByMagazine(magazineId: number): Page[] {

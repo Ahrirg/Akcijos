@@ -15,6 +15,7 @@ export interface Page {
 }
 
 export interface ProductAkcija {
+  ProductId?: number;
   ProductName: string;
   ShopName: string;
   DiscountSizeProc: number;

@@ -1,6 +1,6 @@
 import { BlockLike, forEachChild } from "typescript";
 import { getItemDiscountsFromImage } from "./Ai"
-import { imageUrlToBase64, pageUrlToText } from "./Fetch";
+// import { imageUrlToBase64, pageUrlToText } from "./Fetch";
 import { url } from "node:inspector";
 import * as fs from "node:fs";
 import path from "node:path";
@@ -30,10 +30,10 @@ function parseImageWithAi(base64Image: Buffer): Promise<string | undefined> {
 
 async function parseOnePage(imageUrl: string): Promise<boolean> {
     try {
-        const imageDataBase64 = await imageUrlToBase64(imageUrl);
+        const imageDataBase64 = 0;
 
         console.log("Ai parse started");
-        const parsedData = await parseImageWithAi(imageDataBase64);
+        const parsedData = 0;
         console.log("Ai parse done\n");
         if (!parsedData) {
             console.error("AI returned no data");
@@ -53,21 +53,21 @@ function findRaskakcijaImageUrls(html: string): string[] {
   return matches || [];
 }
 
-async function parseMagazine(pageUrl: string): Promise<boolean> {
-    try {
-        const pageData = await pageUrlToText(pageUrl);
-        const imageUrls = findRaskakcijaImageUrls(pageData);
+// async function parseMagazine(pageUrl: string): Promise<boolean> {
+//     try {
+//         const pageData = 0;
+//         const imageUrls = 0;
 
-        for (const url of imageUrls) {
-            await parseOnePage(url);
-        }
+//         for (const url of imageUrls) {
+//             await parseOnePage(url);
+//         }
 
-        return true;
-    } catch (error) {
-        console.error("Failed to parse magazine:", error);
-        return false;
-    }
-}
+//         return true;
+//     } catch (error) {
+//         console.error("Failed to parse magazine:", error);
+//         return false;
+//     }
+// }
 
 // async function cronJob(): Promise<void> {
 //     console.log("Cron Job");
