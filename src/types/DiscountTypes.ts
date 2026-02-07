@@ -1,26 +1,28 @@
 export interface Magazine {
   MagazineID?: number;
-  EndTime: string;
-  AddedTime: string;
+  Name: string;
+  EndTime?: Date;
+  AddedTime: Date;
   URL: string;
 }
 
 export interface Page {
   PageId?: number;
-  EndTime: string;
-  AddedTime: string;
+  EndTime?: Date;
+  AddedTime: Date;
   ImageUUID: string;
-  Parsed: number;
+  Parsed: boolean;
   MagazineId: number;
 }
 
 export interface ProductAkcija {
+  ProductId?: number;
   ProductName: string;
   ShopName: string;
   DiscountSizeProc: number;
   CostBeforeDiscount: number;
   CostAfterDiscount: number;
-  EndTime: string;
-  AddedTime: string;
+  EndTime: Date;
+  AddedTime: Date;
   PageId: number;
 }
