@@ -33,6 +33,17 @@ async function pageUrlToText(url: string): Promise<string> {
 }
 
 
+function extractEndDate(fullTitle: string): Date {
+  const dateString: string = fullTitle.slice(-10);
+  let date = new Date(dateString);
+
+  if (isNaN(date.getTime())) {
+    date = new Date();
+    date.setDate(date.getDate() + 10);
+  }
+
+  return date;
+}
 
 function findImageUrls(html: string): string[] {
   const pattern = /https:\/\/www\.raskakcija\.lt\/admin\/contentfiles\/\d+\.jpg/g;
@@ -40,14 +51,17 @@ function findImageUrls(html: string): string[] {
   return matches || [];
 }
 
-async function extractPagesFromMagazine(MagazineLink : MagazineLink) {
+async function extractPagesFromMagazine(MagazineLink: MagazineLink) {
   const htmlRawText = await pageUrlToText(MagazineLink.url);
   const imageUrls = findImageUrls(htmlRawText);
+
+  const EndDate = extractEndDate(MagazineLink.title);
 
   const curMagazine: Magazine = {
     AddedTime: new Date(),
     URL: MagazineLink.url,
     Name: MagazineLink.title,
+    EndTime: EndDate,
   }
 
   const magazineId = Number(insertMagazine(curMagazine));
@@ -71,6 +85,7 @@ async function extractPagesFromMagazine(MagazineLink : MagazineLink) {
       AddedTime: new Date(),
       ImageUUID: ImageUUID,
       MagazineId: magazineId,
+      EndTime: EndDate,
     }
 
     insertPage(curPage);
@@ -97,7 +112,7 @@ function findMagazineLinks(html: string): MagazineLink[] {
   const results = matches.map(match => {
     // If patternAlt matched, the order is [title, url], otherwise [url, title]
     const isAlt = match[0].indexOf('title="') < match[0].indexOf('href="');
-    
+
     let url = isAlt ? match[2] : match[1];
     let title = isAlt ? match[1] : match[2];
 
@@ -113,18 +128,18 @@ function findMagazineLinks(html: string): MagazineLink[] {
 
 async function findAllCurrentMagazinesForAShop(ShopName: string) {
   const ShopUrl = await findUrlByShopName(ShopName);
-  if (!ShopUrl) {  
+  if (!ShopUrl) {
     console.error("Shop url was not found");
     return;
   }
- 
+
   const HtmlRawData = await pageUrlToText(ShopUrl);
-  
+
   const magazineLinks = findMagazineLinks(HtmlRawData);
-  
+
   console.log(`Found ${magazineLinks.length} magazines for ${ShopName}`);
 
-  for (const link of magazineLinks) {      
+  for (const link of magazineLinks) {
     await extractPagesFromMagazine(link);
   }
 }
