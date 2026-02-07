@@ -1,5 +1,5 @@
 import { BlockLike, forEachChild } from "typescript";
-import { getItemDiscountsFromImage } from "./Ai"
+import { getItemDiscountsFromImage } from "../managers/Ai"
 // import { imageUrlToBase64, pageUrlToText } from "./Fetch";
 import { url } from "node:inspector";
 import * as fs from "node:fs";
