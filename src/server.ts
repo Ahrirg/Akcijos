@@ -2,13 +2,14 @@
 import { updateDatabase } from "./utils/Fetch";
 import "./utils/Temp";
 import "./managers/Cron";
+import { CONFIG } from "./utils/Config";
 
 const express = require('express');
 const cors = require('cors')
 const path = require('path');
 const app = express();
 
-const Port = 6969;
+const Port = CONFIG.PORT;
 
 app.use(cors());
 app.use(express.json());
