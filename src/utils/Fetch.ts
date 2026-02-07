@@ -1,9 +1,10 @@
 import fetch from "node-fetch";
 import { randomUUID } from 'node:crypto';
 
-import {  } from "../utils/db";
-import { Page, Magazine} from "../types/DiscountTypes";
+import { insertMagazine, insertPage } from "../utils/db";
+import { Page, Magazine } from "../types/DiscountTypes";
 import { savePageImage } from "../utils/Temp";
+import { url } from "node:inspector";
 
 async function imageUrlToBase64(url: string): Promise<Buffer> {
   const response = await fetch(url);
@@ -36,15 +37,31 @@ async function extractPagesFromMagazine(Url: string) {
   const htmlRawText = await pageUrlToText(Url);
   const imageUrls = findImageUrls(htmlRawText);
 
+  const curMagazine: Magazine = {
+    AddedTime: "2025",
+    URL: Url,
+  }
+
+  const magazineId = Number(insertMagazine(curMagazine));
+
+
   for (let index = 0; index < imageUrls.length; index++) {
     const element = imageUrls[index];
+    const ImageUUID = randomUUID();
 
     savePageImage(
-      randomUUID(),
+      ImageUUID,
       await imageUrlToBase64(element)
     );
 
+    const curPage: Page = {
+      Parsed: 0,
+      AddedTime: "2025",
+      ImageUUID: ImageUUID,
+      MagazineId: magazineId,
+    }
 
+    insertPage(curPage);
   }
 }
 

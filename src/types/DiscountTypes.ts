@@ -1,13 +1,13 @@
 export interface Magazine {
   MagazineID?: number;
-  EndTime: string;
+  EndTime?: string;
   AddedTime: string;
   URL: string;
 }
 
 export interface Page {
   PageId?: number;
-  EndTime: string;
+  EndTime?: string;
   AddedTime: string;
   ImageUUID: string;
   Parsed: number;

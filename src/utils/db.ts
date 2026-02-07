@@ -10,31 +10,31 @@ db.pragma('foreign_keys = ON');
 db.exec(`
   CREATE TABLE IF NOT EXISTS Magazine (
     MagazineID INTEGER PRIMARY KEY AUTOINCREMENT,
-    EndTime TEXT,
-    AddedTime TEXT,
-    URL TEXT
+    EndTime TEXT, -- Nullable
+    AddedTime TEXT NOT NULL,
+    URL TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS Page (
     PageId INTEGER PRIMARY KEY AUTOINCREMENT,
-    EndTime TEXT,
-    AddedTime TEXT,
-    ImageUUID TEXT,
-    Parsed INTEGER,
-    MagazineId INTEGER,
+    EndTime TEXT, -- Nullable
+    AddedTime TEXT NOT NULL,
+    ImageUUID TEXT NOT NULL,
+    Parsed INTEGER DEFAULT 0,
+    MagazineId INTEGER NOT NULL,
     FOREIGN KEY (MagazineId) REFERENCES Magazine(MagazineID) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS ProductAkcija (
     ProductId INTEGER PRIMARY KEY AUTOINCREMENT,
-    ProductName TEXT,
-    ShopName TEXT,
+    ProductName TEXT NOT NULL,
+    ShopName TEXT NOT NULL,
     DiscountSizeProc REAL,
     CostBeforeDiscount REAL,
     CostAfterDiscount REAL,
-    EndTime TEXT,
-    AddedTime TEXT,
-    PageId INTEGER,
+    EndTime TEXT NOT NULL,
+    AddedTime TEXT NOT NULL,
+    PageId INTEGER NOT NULL,
     FOREIGN KEY (PageId) REFERENCES Page(PageId) ON DELETE CASCADE,
     UNIQUE(ProductName, ShopName)
   );
@@ -48,7 +48,11 @@ export function insertMagazine(mag: Magazine): number | bigint {
     INSERT INTO Magazine (EndTime, AddedTime, URL) 
     VALUES (@EndTime, @AddedTime, @URL)
   `);
-  return stmt.run(mag).lastInsertRowid;
+  // If EndTime is undefined, SQLite will insert NULL
+  return stmt.run({
+    ...mag,
+    EndTime: mag.EndTime ?? null 
+  }).lastInsertRowid;
 }
 
 export function insertPage(page: Page): number | bigint {
@@ -56,7 +60,10 @@ export function insertPage(page: Page): number | bigint {
     INSERT INTO Page (EndTime, AddedTime, ImageUUID, Parsed, MagazineId) 
     VALUES (@EndTime, @AddedTime, @ImageUUID, @Parsed, @MagazineId)
   `);
-  return stmt.run(page).lastInsertRowid;
+  return stmt.run({
+    ...page,
+    EndTime: page.EndTime ?? null
+  }).lastInsertRowid;
 }
 
 export function insertProduct(product: ProductAkcija): number | bigint {
