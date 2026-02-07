@@ -1,5 +1,6 @@
 export interface Magazine {
   MagazineID?: number;
+  Name: string;
   EndTime?: Date;
   AddedTime: Date;
   URL: string;

@@ -1,10 +1,16 @@
 import fetch from "node-fetch";
-import { randomUUID } from 'node:crypto';
+import { v5 as uuidv5 } from 'uuid';
 
 import { insertMagazine, insertPage } from "../utils/db";
 import { Page, Magazine } from "../types/DiscountTypes";
 import { savePageImage } from "../utils/Temp";
-import { url } from "node:inspector";
+
+const MY_NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341';
+export interface MagazineLink {
+  url: string;
+  title: string;
+}
+
 
 async function imageUrlToBase64(url: string): Promise<Buffer> {
   const response = await fetch(url);
@@ -27,27 +33,33 @@ async function pageUrlToText(url: string): Promise<string> {
 }
 
 
+
 function findImageUrls(html: string): string[] {
   const pattern = /https:\/\/www\.raskakcija\.lt\/admin\/contentfiles\/\d+\.jpg/g;
   const matches = html.match(pattern);
   return matches || [];
 }
 
-async function extractPagesFromMagazine(Url: string) {
-  const htmlRawText = await pageUrlToText(Url);
+async function extractPagesFromMagazine(MagazineLink : MagazineLink) {
+  const htmlRawText = await pageUrlToText(MagazineLink.url);
   const imageUrls = findImageUrls(htmlRawText);
 
   const curMagazine: Magazine = {
     AddedTime: new Date(),
-    URL: Url,
+    URL: MagazineLink.url,
+    Name: MagazineLink.title,
   }
 
   const magazineId = Number(insertMagazine(curMagazine));
 
-
+  console.log({
+    title: MagazineLink.title,
+    url: MagazineLink.url,
+    nrOfPages: imageUrls.length,
+  })
   for (let index = 0; index < imageUrls.length; index++) {
     const element = imageUrls[index];
-    const ImageUUID = randomUUID();
+    const ImageUUID = uuidv5(`${MagazineLink.title}_page_${index}`, MY_NAMESPACE);
 
     savePageImage(
       ImageUUID,
@@ -65,6 +77,56 @@ async function extractPagesFromMagazine(Url: string) {
   }
 }
 
-export async function findAllCurrentMagazines() {
-  //TODO
+async function findUrlByShopName(ShopName: string) {
+  if (ShopName === "Maxima") {
+    return "https://www.raskakcija.lt/maxima-akcijos.htm";
+  }
 }
+
+function findMagazineLinks(html: string): MagazineLink[] {
+  const pattern = /<a[^>]*href="([^"]+)"[^>]*title="([^"]+)"[^>]*class="[^"]*title green[^"]*"/g;
+  const patternAlt = /<a[^>]*title="([^"]+)"[^>]*href="([^"]+)"[^>]*class="[^"]*title green[^"]*"/g;
+  const patternThird = /<a[^>]*class="[^"]*title green[^"]*"[^>]*href="([^"]+)"[^>]*title="([^"]+)"/g;
+
+  const matches = [
+    ...html.matchAll(pattern),
+    ...html.matchAll(patternAlt),
+    ...html.matchAll(patternThird)
+  ];
+
+  const results = matches.map(match => {
+    // If patternAlt matched, the order is [title, url], otherwise [url, title]
+    const isAlt = match[0].indexOf('title="') < match[0].indexOf('href="');
+    
+    let url = isAlt ? match[2] : match[1];
+    let title = isAlt ? match[1] : match[2];
+
+    if (!url.startsWith('http')) {
+      url = `https://www.raskakcija.lt${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    return { url, title };
+  });
+
+  return Array.from(new Map(results.map(item => [item.url, item])).values());
+}
+
+async function findAllCurrentMagazinesForAShop(ShopName: string) {
+  const ShopUrl = await findUrlByShopName(ShopName);
+  if (!ShopUrl) {  
+    console.error("Shop url was not found");
+    return;
+  }
+ 
+  const HtmlRawData = await pageUrlToText(ShopUrl);
+  
+  const magazineLinks = findMagazineLinks(HtmlRawData);
+  
+  console.log(`Found ${magazineLinks.length} magazines for ${ShopName}`);
+
+  for (const link of magazineLinks) {      
+    await extractPagesFromMagazine(link);
+  }
+}
+
+findAllCurrentMagazinesForAShop("Maxima");

@@ -10,6 +10,7 @@ db.pragma('foreign_keys = ON');
 db.exec(`
   CREATE TABLE IF NOT EXISTS Magazine (
     MagazineID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Name TEXT NOT NULL UNIQUE,
     EndTime TEXT,
     AddedTime TEXT NOT NULL,
     URL TEXT NOT NULL
@@ -19,7 +20,7 @@ db.exec(`
     PageId INTEGER PRIMARY KEY AUTOINCREMENT,
     EndTime TEXT,
     AddedTime TEXT NOT NULL,
-    ImageUUID TEXT NOT NULL,
+    ImageUUID TEXT NOT NULL UNIQUE,
     Parsed INTEGER DEFAULT 0,
     MagazineId INTEGER NOT NULL,
     FOREIGN KEY (MagazineId) REFERENCES Magazine(MagazineID) ON DELETE CASCADE
@@ -44,28 +45,48 @@ db.exec(`
 `);
 
 export function insertMagazine(mag: Magazine): number | bigint {
-  const stmt = db.prepare(`
-    INSERT INTO Magazine (EndTime, AddedTime, URL) 
-    VALUES (@EndTime, @AddedTime, @URL)
+  const insertStmt = db.prepare(`
+    INSERT OR IGNORE INTO Magazine (Name, EndTime, AddedTime, URL) 
+    VALUES (@Name, @EndTime, @AddedTime, @URL)
   `);
-  return stmt.run({
+
+  const info = insertStmt.run({
     ...mag,
     EndTime: mag.EndTime?.toISOString() ?? null,
     AddedTime: mag.AddedTime.toISOString()
-  }).lastInsertRowid;
+  });
+
+  if (info.changes > 0) {
+    return info.lastInsertRowid;
+  }
+
+  const selectStmt = db.prepare('SELECT MagazineID FROM Magazine WHERE Name = ?');
+  const row = selectStmt.get(mag.Name) as { MagazineID: number | bigint };
+  
+  return row.MagazineID;
 }
 
 export function insertPage(page: Page): number | bigint {
-  const stmt = db.prepare(`
-    INSERT INTO Page (EndTime, AddedTime, ImageUUID, Parsed, MagazineId) 
+  const insertStmt = db.prepare(`
+    INSERT OR IGNORE INTO Page (EndTime, AddedTime, ImageUUID, Parsed, MagazineId) 
     VALUES (@EndTime, @AddedTime, @ImageUUID, @Parsed, @MagazineId)
   `);
-  return stmt.run({
+
+  const info = insertStmt.run({
     ...page,
     EndTime: page.EndTime?.toISOString() ?? null,
     AddedTime: page.AddedTime.toISOString(),
     Parsed: page.Parsed ? 1 : 0
-  }).lastInsertRowid;
+  });
+
+  if (info.changes > 0) {
+    return info.lastInsertRowid;
+  }
+
+  const selectStmt = db.prepare('SELECT PageId FROM Page WHERE ImageUUID = ?');
+  const row = selectStmt.get(page.ImageUUID) as { PageId: number | bigint };
+  
+  return row.PageId;
 }
 
 export function insertProduct(product: ProductAkcija): number | bigint {
@@ -117,4 +138,8 @@ export function getActiveProducts(offset: number, limit: number): ProductAkcija[
   }));
 }
 
+export function getBackupOfdb(name: string){
+  db.backup(name);
+}
+getBackupOfdb("backup.db")
 export default db;

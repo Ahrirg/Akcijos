@@ -1,5 +1,6 @@
 // import "./utils/Parser";
 import "./utils/Temp";
+import "./utils/Fetch";
 
 const express = require('express');
 const cors = require('cors')
@@ -20,10 +21,10 @@ app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/api', require('./routes/api'))
 
-app.get('/', (req : any, res : any) => {
+app.get('/', (req: any, res: any) => {
     res.render('Main.ejs');
 })
 
-app.listen(Port, function() {
+app.listen(Port, function () {
     console.log(`Server running on port: ${Port}.`);
 })
