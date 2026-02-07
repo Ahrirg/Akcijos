@@ -144,4 +144,7 @@ async function findAllCurrentMagazinesForAShop(ShopName: string) {
   }
 }
 
-findAllCurrentMagazinesForAShop("Maxima");
+
+export async function updateDatabase() {
+  findAllCurrentMagazinesForAShop("Maxima");
+}
