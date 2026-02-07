@@ -1,6 +1,7 @@
 // import "./utils/Parser";
+import { updateDatabase } from "./utils/Fetch";
 import "./utils/Temp";
-import "./utils/Fetch";
+import "./managers/Cron";
 
 const express = require('express');
 const cors = require('cors')
@@ -28,3 +29,7 @@ app.get('/', (req: any, res: any) => {
 app.listen(Port, function () {
     console.log(`Server running on port: ${Port}.`);
 })
+
+
+// tempstuff
+updateDatabase();
