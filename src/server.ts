@@ -3,6 +3,7 @@ import { updateDatabase } from "./utils/Fetch";
 import "./utils/Temp";
 import "./managers/Cron";
 import { CONFIG } from "./utils/Config";
+import {parseUnparsedData} from "./managers/Ai";
 
 const express = require('express');
 const cors = require('cors')
@@ -33,4 +34,5 @@ app.listen(Port, function () {
 
 
 // tempstuff
-updateDatabase();
+// updateDatabase();
+parseUnparsedData();
