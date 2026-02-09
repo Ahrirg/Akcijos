@@ -1,4 +1,4 @@
-import { getUnparsedPages, insertProduct } from "../utils/db";
+import { updatePageParsedStatus, getUnparsedPages, insertProduct } from "../utils/db";
 import { getPageImage } from "../utils/Temp";
 import { ProductAkcija, Page } from "../types/DiscountTypes";
 import { askOllama } from "../parsers/Ollama";
@@ -102,17 +102,18 @@ export async function parseUnparsedData() {
   for (let index = 0; index < unparsedPages.length; index++) {
     const element = unparsedPages[index];
 
-    if (element.Parsed) {
+    if (element.Parsed || !element.PageId) {
       continue;
     }
 
-    console.log(`Trying to parse ${element.PageId}`);
+    console.log(`[LLM PARSER] parsing ${index+1}/${unparsedPages.length} | page id: ${element.PageId}`);
 
     const imageBytes = await getPageImage(element.ImageUUID);
     const result = await getItemDiscountsFromImage(imageBytes);
 
     if (result) {
       await addToDatabase(result, element);
+      updatePageParsedStatus(element.PageId, true);
     } else {
       console.log(`Failed to parse page ${element.PageId}`);
     }

@@ -89,6 +89,11 @@ export function insertPage(page: Page): number | bigint {
   return row.PageId;
 }
 
+export function updatePageParsedStatus(pageId: number, parsed: boolean): void {
+  const stmt = db.prepare('UPDATE Page SET Parsed = ? WHERE PageId = ?');
+  stmt.run(parsed ? 1 : 0, pageId);
+}
+
 export function insertProduct(product: ProductAkcija): number | bigint {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO ProductAkcija 
