@@ -36,6 +36,7 @@ async function pageUrlToText(url: string): Promise<string> {
 function extractEndDate(fullTitle: string): Date {
   const dateString: string = fullTitle.slice(-10);
   let date = new Date(dateString);
+  date.setDate(date.getDate() + 1);
 
   if (isNaN(date.getTime())) {
     date = new Date();
@@ -51,7 +52,7 @@ function findImageUrls(html: string): string[] {
   return matches || [];
 }
 
-async function extractPagesFromMagazine(MagazineLink: MagazineLink) {
+async function extractPagesFromMagazine(MagazineLink: MagazineLink, ShopName : string) {
   const htmlRawText = await pageUrlToText(MagazineLink.url);
   const imageUrls = findImageUrls(htmlRawText);
 
@@ -62,6 +63,7 @@ async function extractPagesFromMagazine(MagazineLink: MagazineLink) {
     URL: MagazineLink.url,
     Name: MagazineLink.title,
     EndTime: EndDate,
+    ShopName: ShopName,
   }
 
   const magazineId = Number(insertMagazine(curMagazine));
@@ -140,7 +142,7 @@ async function findAllCurrentMagazinesForAShop(ShopName: string) {
   console.log(`Found ${magazineLinks.length} magazines for ${ShopName}`);
 
   for (const link of magazineLinks) {
-    await extractPagesFromMagazine(link);
+    await extractPagesFromMagazine(link, ShopName);
   }
 }
 

@@ -19,13 +19,16 @@
     "better-sqlite3": "^12.5.0",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.4",
     "ejs": "^3.1.10",
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "node-fetch": "^3.3.2",
     "ollama": "^0.6.3",
+    "sharp": "^0.34.5",
     "tsc-watch": "^7.2.0",
     "typescript": "^5.9.3",
+    "undici": "^7.21.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
