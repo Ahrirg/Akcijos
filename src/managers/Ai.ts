@@ -1,4 +1,4 @@
-import { updatePageParsedStatus, getUnparsedPages, insertProduct } from "../utils/db";
+import { updatePageParsedStatus, getUnparsedPages, insertProduct, getMagazineById } from "../utils/db";
 import { getPageImage } from "../utils/Temp";
 import { ProductAkcija, Page } from "../types/DiscountTypes";
 import { askOllama } from "../parsers/Ollama";
@@ -80,9 +80,11 @@ async function addToDatabase(Items: LLM_Product[], Page: Page) {
       ? [element.price_before_discount, element.price_after_discount]
       : [element.price_after_discount, element.price_before_discount];
 
+    const Magazine = getMagazineById(Page.MagazineId);
+
     const formatedProduct: ProductAkcija = {
       ProductName: element.product_name,
-      ShopName: "Maxima",
+      ShopName: Magazine ? Magazine.ShopName : "",
       CostBeforeDiscount: costBefore,
       CostAfterDiscount: costAfter,
       AddedTime: new Date(),

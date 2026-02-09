@@ -11,6 +11,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS Magazine (
     MagazineID INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL UNIQUE,
+    ShopName TEXT NOT NULL,
     EndTime TEXT,
     AddedTime TEXT NOT NULL,
     URL TEXT NOT NULL
@@ -46,8 +47,8 @@ db.exec(`
 
 export function insertMagazine(mag: Magazine): number | bigint {
   const insertStmt = db.prepare(`
-    INSERT OR IGNORE INTO Magazine (Name, EndTime, AddedTime, URL) 
-    VALUES (@Name, @EndTime, @AddedTime, @URL)
+    INSERT OR IGNORE INTO Magazine (Name, ShopName, EndTime, AddedTime, URL) 
+    VALUES (@Name, @ShopName, @EndTime, @AddedTime, @URL)
   `);
 
   const info = insertStmt.run({
@@ -115,6 +116,19 @@ export function getPagesByMagazine(magazineId: number): Page[] {
     AddedTime: new Date(row.AddedTime),
     Parsed: row.Parsed === 1
   }));
+}
+
+export function getMagazineById(magazineId: number): Magazine | undefined {
+  const row = db.prepare('SELECT * FROM Magazine WHERE MagazineID = ?').get(magazineId) as any;
+
+  if (!row) return undefined;
+
+  return {
+    ...row,
+    ShopName: row.ShopName,
+    EndTime: row.EndTime ? new Date(row.EndTime) : undefined,
+    AddedTime: new Date(row.AddedTime)
+  };
 }
 
 export function getUnparsedPages(): Page[] {

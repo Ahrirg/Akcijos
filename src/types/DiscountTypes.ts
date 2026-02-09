@@ -1,6 +1,7 @@
 export interface Magazine {
   MagazineID?: number;
   Name: string;
+  ShopName: string;
   EndTime?: Date;
   AddedTime: Date;
   URL: string;
