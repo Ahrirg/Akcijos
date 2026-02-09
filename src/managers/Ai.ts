@@ -1,15 +1,9 @@
-import * as fs from "node:fs";
-import path from "node:path";
-import { CONFIG } from "../utils/Config";
 import { getUnparsedPages, insertProduct } from "../utils/db";
 import { getPageImage } from "../utils/Temp";
 import { ProductAkcija, Page } from "../types/DiscountTypes";
-import { fetchForever } from "../utils/fetchWithTimeout";
-
-const prompt: string = fs.readFileSync(
-  path.resolve(__dirname, "..", "data", "prompt.txt"),
-  { encoding: "utf-8" }
-);
+import { askOllama } from "../parsers/Ollama";
+import { askGoogle } from "../parsers/Google";
+import { CONFIG } from "../utils/Config";
 
 interface LLM_Product {
   product_name: string;
@@ -17,90 +11,28 @@ interface LLM_Product {
   price_after_discount: number;
 }
 
-interface OllamaMessage {
-  role: "user" | "assistant" | "system";
-  content: string;
-  images?: string[];
-  options: {
-    temperature: number
-  }
-  keep_alive: string,
-}
-
-interface OllamaChatRequest {
-  model: string;
-  messages: OllamaMessage[];
-  stream?: boolean;
-}
-
-interface OllamaChatResponse {
-  model: string;
-  created_at: string;
-  message: {
-    role: string;
-    content: string;
-  };
-  done: boolean;
-}
-
-async function askOllama(
-  imageBytes: Buffer
-): Promise<string> {
-  try {
-    const imageBase64 = imageBytes.toString("base64");
-
-    const requestBody: OllamaChatRequest = {
-      model: "alessandrobenin01/NuExtract2.0-8B:latest",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-          images: [imageBase64],
-          options: {
-            temperature: 0
-          },
-          keep_alive: "0m",
-        },
-      ],
-      stream: false,
-    };
-
-    const response = await fetchForever(
-      `${CONFIG.OLLAMA_SERVER}/api/chat`,
-      {
-        fetchOptions: {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        },
-        onProgress: (msg: string) => console.log(`[Ollama] ${msg}`),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Ollama API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data: OllamaChatResponse = await response.json() as OllamaChatResponse;
-    // console.log(data.message);
-
-    return data.message.content;
-  } catch (error) {
-    console.warn("Error calling Ollama:", error);
-    return "";
-  }
-}
-
 export async function getItemDiscountsFromImage(
   imageBytes: Buffer,
 ): Promise<LLM_Product[] | undefined> {
-  const output = parseProducts(await askOllama(imageBytes));
 
-  return output;
+  let output = "";
+
+  switch (CONFIG.AI_TYPE) {
+    case "google":
+      console.log("[GoogleAI] Starting...");
+      output = await askGoogle(imageBytes);
+      console.log("[GoogleAI] Done");
+      break;
+
+    case "ollama":
+      output = await askOllama(imageBytes);
+      break;
+
+    default:
+      throw new Error(`Unsupported AI type: ${CONFIG.AI_TYPE}`);
+  }
+
+  return parseProducts(output);
 }
 
 function isProductArray(data: unknown): data is LLM_Product[] {
