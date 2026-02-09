@@ -1,8 +1,9 @@
 // import Database from 'better-sqlite3';
 import express, { Request, Response, Router } from 'express';
 import cors from 'cors';
-// import path from 'path';
 import db from '../utils/db';
+import { Page } from "../types/DiscountTypes";
+import { getPageImage } from "../utils/Temp";
 
 const router: Router = express.Router();
 
@@ -32,6 +33,31 @@ router.get('/getTest', (req: Request, res: Response) => {
   });
 });
 
+router.get("/getImageByPageId", (req: Request, res: Response) => {
+  const pageId = Number(req.query.id);
+
+  if (!pageId) {
+    return res.status(400).send("Missing or invalid id");
+  }
+
+  const dbanswer = db
+    .prepare("SELECT * FROM Page WHERE PageId = ?")
+    .get(pageId) as Page;
+
+  if (!dbanswer) {
+    return res.sendStatus(404);
+  }
+
+  getPageImage(dbanswer.ImageUUID).then((imageBuffer) =>{
+    if (imageBuffer) {
+      res.type("image/png");
+      res.send(imageBuffer);
+    } else {
+      res.json({Error: "Image Not found"})
+    }
+  });
+});
+
 router.get('/getDiscountByName', (req: Request, res: Response) => {
   const discountName = req.query.name as string;
   
@@ -39,7 +65,12 @@ router.get('/getDiscountByName', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Name parameter is required' });
   }
   
-  const answer = db.prepare("SELECT * FROM discounts WHERE name = ?").get(discountName);
+  const answer = db.prepare("SELECT * FROM ProductAkcija WHERE name = ?").get(discountName);
+  res.json(answer || { message: 'Not found' });
+});
+
+router.get('/getDiscounts', (req: Request, res: Response) => {
+  const answer = db.prepare("SELECT * FROM ProductAkcija").all();
   res.json(answer || { message: 'Not found' });
 });
 
@@ -55,42 +86,5 @@ router.get('/getDiscountByShop', (req: Request, res: Response) => {
   res.json(answer || { message: 'Not found' });
 });
 
-router.post('/addDiscount', (req: Request, res: Response) => {
-  const discount: Discount = req.body;
-  
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO discounts (Shop, Name, DiscountAmountInProc, CostBeforeDiscount, 
-                            CostAfterDiscount, DiscountEndDate, ItemAddedDate, 
-                            ImportedFromWhere, AutoImported)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    console.log(req.body);
-    
-    const result = stmt.run(
-      discount.Shop,
-      discount.Name,
-      discount.DiscountAmountInProc,
-      discount.CostBeforeDiscount,
-      discount.CostAfterDiscount,
-      // Convert Date to string (ISO format)
-      typeof discount.DiscountEndDate === 'string' 
-        ? discount.DiscountEndDate 
-        : new Date(discount.DiscountEndDate).toISOString(),
-      typeof discount.ItemAddedDate === 'string' 
-        ? discount.ItemAddedDate 
-        : new Date(discount.ItemAddedDate).toISOString(),
-      discount.ImportedFromWhere || null,
-      // Convert boolean to 0 or 1
-      discount.AutoImported ? 1 : 0
-    );
-    
-    res.status(201).json({ success: true, id: result.lastInsertRowid });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: 'Failed to add discount', details: error });
-  }
-});
 
 module.exports = router;

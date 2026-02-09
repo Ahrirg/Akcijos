@@ -91,7 +91,7 @@ async function addToDatabase(Items: LLM_Product[], Page: Page) {
       AddedTime: new Date(),
       EndTime: Magazine && Magazine.EndTime ? Magazine.EndTime : new Date(),
       PageId: Page.PageId ? Page.PageId : -1,
-      DiscountSizeProc: 100 - Math.round(costAfter / costBefore * 100)
+      DiscountSizeProc: Math.round((costBefore-costAfter)/costBefore*100)
     }
 
     console.log(formatedProduct);
