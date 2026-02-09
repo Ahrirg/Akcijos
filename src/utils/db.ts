@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { Magazine, Page, ProductAkcija } from '../types/DiscountTypes';
+import { removePageImage } from "../utils/Temp";
 
 const db = new Database(path.join(__dirname, '..', 'Storage.db'));
 
@@ -155,6 +156,35 @@ export function getActiveProducts(offset: number, limit: number): ProductAkcija[
     EndTime: new Date(row.EndTime),
     AddedTime: new Date(row.AddedTime)
   }));
+}
+
+export function cleanUpAkcija(): number {
+  const stmt = db.prepare("DELETE FROM ProductAkcija WHERE EndTime < date('now', '-1 day')");
+  return stmt.run().changes;
+}
+
+export function cleanUpPage(): void {
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() - 1);
+  const expiryString = expiryDate.toISOString();
+
+  const oldPages = db.prepare("SELECT ImageUUID FROM Page WHERE EndTime < ?")
+    .all(expiryString) as { ImageUUID: string }[];
+
+  oldPages.forEach(page => {
+    // console.log(`Cleaning up old page image: ${page.ImageUUID}`);
+    removePageImage(page.ImageUUID);
+  });
+
+  const stmt = db.prepare("DELETE FROM Page WHERE EndTime < ?");
+  const info = stmt.run(expiryString);
+  
+  console.log(`Total pages deleted: ${info.changes}`);
+}
+
+export function cleanUpMagazine(): number {
+  const stmt = db.prepare("DELETE FROM Magazine WHERE EndTime < date('now', '-1 day')");
+  return stmt.run().changes;
 }
 
 export function getBackupOfdb(name: string){
