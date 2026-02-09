@@ -57,6 +57,7 @@ function parseProducts(jsonText: string): LLM_Product[] | undefined {
   let parsed: unknown;
 
   console.log(jsonText)
+  jsonText = jsonText.replaceAll("```json", "").replaceAll("```", "");
   try {
     parsed = JSON.parse(jsonText);
   } catch {
@@ -88,9 +89,9 @@ async function addToDatabase(Items: LLM_Product[], Page: Page) {
       CostBeforeDiscount: costBefore,
       CostAfterDiscount: costAfter,
       AddedTime: new Date(),
-      EndTime: new Date(),
+      EndTime: Magazine && Magazine.EndTime ? Magazine.EndTime : new Date(),
       PageId: Page.PageId ? Page.PageId : -1,
-      DiscountSizeProc: costAfter / costBefore * 100
+      DiscountSizeProc: 100 - Math.round(costAfter / costBefore * 100)
     }
 
     console.log(formatedProduct);

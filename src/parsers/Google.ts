@@ -38,8 +38,9 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 export async function askGoogle(imageBytes: Buffer, attempt: number = 0): Promise<string> {
     if (attempt > 10) { return ""; }
     try {
-        return GoogleApi(imageBytes);
+        return await GoogleApi(imageBytes);
     } catch (err: any) {
+        console.log(err);
         if (err.status === 503) {
             console.warn(`Demand high (503). Attempt ${attempt + 1}. Retrying in 60s...`);
 

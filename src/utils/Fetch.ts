@@ -36,6 +36,7 @@ async function pageUrlToText(url: string): Promise<string> {
 function extractEndDate(fullTitle: string): Date {
   const dateString: string = fullTitle.slice(-10);
   let date = new Date(dateString);
+  date.setDate(date.getDate() + 1);
 
   if (isNaN(date.getTime())) {
     date = new Date();
