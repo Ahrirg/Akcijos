@@ -12,10 +12,11 @@ export interface MagazineLink {
 }
 
 
-async function imageUrlToBase64(url: string): Promise<Buffer> {
+async function imageUrlToBase64(url: string): Promise<Buffer | undefined> {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error("Failed to fetch image");
+    console.error("Failed to fetch image");
+    return ;
   }
 
   const buffer = await response.arrayBuffer();
@@ -26,7 +27,8 @@ async function pageUrlToText(url: string): Promise<string> {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch HTML page: ${response.status}`);
+    console.error(`Failed to fetch HTML page: ${response.status}`);
+    return "";
   }
 
   return await response.text();
@@ -77,9 +79,14 @@ async function extractPagesFromMagazine(MagazineLink: MagazineLink, ShopName : s
     const element = imageUrls[index];
     const ImageUUID = uuidv5(`${MagazineLink.title}_page_${index}`, MY_NAMESPACE);
 
+    const buffer = await imageUrlToBase64(element);
+    if (!buffer) {
+      continue;
+    }
+
     savePageImage(
       ImageUUID,
-      await imageUrlToBase64(element)
+      buffer
     );
 
     const curPage: Page = {
@@ -97,6 +104,18 @@ async function extractPagesFromMagazine(MagazineLink: MagazineLink, ShopName : s
 async function findUrlByShopName(ShopName: string) {
   if (ShopName === "Maxima") {
     return "https://www.raskakcija.lt/maxima-akcijos.htm";
+  }
+  if (ShopName === "Iki") {
+    return "https://www.raskakcija.lt/iki-akcijos.htm";
+  }
+  if (ShopName === "Lidl") {
+    return "https://www.raskakcija.lt/lidl-akcijos.htm;";
+  }
+   if (ShopName === "Rimi") {
+    return "https://www.raskakcija.lt/rimi-akcijos.htm";
+  }
+  if (ShopName === "Cia") {
+    return "https://www.raskakcija.lt/cia-akcijos.htm";
   }
 }
 
@@ -148,5 +167,9 @@ async function findAllCurrentMagazinesForAShop(ShopName: string) {
 
 
 export async function updateDatabase() {
-  findAllCurrentMagazinesForAShop("Maxima");
+  await findAllCurrentMagazinesForAShop("Maxima");
+  await findAllCurrentMagazinesForAShop("Iki");
+  await findAllCurrentMagazinesForAShop("Rimi");
+  await findAllCurrentMagazinesForAShop("Lidl");
+  await findAllCurrentMagazinesForAShop("Cia");
 }
