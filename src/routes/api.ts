@@ -71,6 +71,7 @@ router.get('/getDiscountByName', (req: Request, res: Response) => {
 
 router.get('/getDiscounts', (req: Request, res: Response) => {
   const answer = db.prepare("SELECT * FROM ProductAkcija").all();
+  console.log("called api")
   res.json(answer || { message: 'Not found' });
 });
 

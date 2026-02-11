@@ -35,4 +35,4 @@ app.listen(Port, function () {
 
 // tempstuff
 // updateDatabase();
-parseUnparsedData();
+// parseUnparsedData();
