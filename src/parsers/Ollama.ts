@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import path from "node:path";
 
 const prompt: string = fs.readFileSync(
-  path.resolve(__dirname, "..", "data", "prompt.txt"),
+  path.resolve(CONFIG.DB_PATH, "prompt.txt"),
   { encoding: "utf-8" }
 );
 

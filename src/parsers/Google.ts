@@ -7,7 +7,7 @@ import path from "node:path";
 const ai = new GoogleGenAI({ apiKey: CONFIG.GOOGLE_API });
 
 const prompt: string = fs.readFileSync(
-    path.resolve(__dirname, "..", "data", "promptGoogle.txt"),
+    path.resolve(CONFIG.DB_PATH, "promptGoogle.txt"),
     { encoding: "utf-8" }
 );
 

@@ -2,8 +2,9 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { Magazine, Page, ProductAkcija } from '../types/DiscountTypes';
 import { removePageImage } from "../utils/Temp";
+import { CONFIG } from './Config';
 
-const db = new Database(path.join(__dirname, '..', 'Storage.db'));
+const db = new Database(path.join(CONFIG.DB_PATH, 'Storage.db'));
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
