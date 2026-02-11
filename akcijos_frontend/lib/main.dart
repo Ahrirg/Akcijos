@@ -208,10 +208,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<ProductAkcija> _allProducts = [];      // The "master" list
-List<ProductAkcija> _filteredProducts = []; // The "visible" list
-final TextEditingController _searchController = TextEditingController();
+  List<ProductAkcija> _allProducts = [];
+  List<ProductAkcija> _filteredProducts = [];
+  final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
+  bool _isAscending = true;
+  String _currentSortColumn = 'after';
 
   @override
   void initState() {
@@ -221,18 +223,38 @@ final TextEditingController _searchController = TextEditingController();
 
   void _runFilter(String enteredKeyword) {
     List<ProductAkcija> results = [];
-    
-    if (enteredKeyword.isEmpty) {
+
+    if (enteredKeyword.isEmpty || enteredKeyword.replaceAll(" ", "").isEmpty) {
       results = _allProducts;
     } else {
-      // Normalize the search keyword once
-      String normalizedKeyword = removeDiacritics(enteredKeyword.toLowerCase());
+      List<String> allShops = [];
+      if (enteredKeyword.toLowerCase().contains("maxima")) {
+        allShops.add("maxima");
+        enteredKeyword = enteredKeyword.replaceAll("maxima", "");
+      }
+      if (enteredKeyword.toLowerCase().contains("iki")) {
+        allShops.add("iki");
+        enteredKeyword = enteredKeyword.replaceAll("iki", "");
+      }
+      if (enteredKeyword.toLowerCase().contains("rimi")) {
+        allShops.add("rimi");
+        enteredKeyword = enteredKeyword.replaceAll("rimi", "");
+      }
+      if (enteredKeyword.toLowerCase().contains("cia")) {
+        allShops.add("cia");
+        enteredKeyword = enteredKeyword.replaceAll("cia", "");
+      }
+      enteredKeyword = enteredKeyword.trim();
 
+      String normalizedKeyword = removeDiacritics(enteredKeyword.toLowerCase());
       results = _allProducts.where((product) {
-        // Normalize the product name for comparison
         String normalizedName = removeDiacritics(product.productName.toLowerCase());
-        
         return normalizedName.contains(normalizedKeyword);
+      }).toList();
+
+
+      results = results.where((product) {
+        return allShops.isNotEmpty ? allShops.contains(product.shopName.toLowerCase()) : true;
       }).toList();
     }
 
@@ -249,18 +271,46 @@ final TextEditingController _searchController = TextEditingController();
         _allProducts = products;
         _filteredProducts = products; // Sync both on initial load
         _isLoading = false;
-        _sortByPrice();
       });
     } catch (e) {
       print("Error: $e");
       setState(() => _isLoading = false);
     }
   }
-  void _sortByPrice() {
-    setState(() {
-      _filteredProducts.sort((a, b) => a.costAfterDiscount.compareTo(b.costAfterDiscount));
+  void _sort(String column) {
+  setState(() {
+    // If clicking the same column, toggle direction. If new column, default to ascending.
+    if (_currentSortColumn == column) {
+      _isAscending = !_isAscending;
+    } else {
+      _currentSortColumn = column;
+      _isAscending = true;
+    }
+
+    _filteredProducts.sort((a, b) {
+      double valA;
+      double valB;
+
+      switch (column) {
+        case 'before':
+          valA = a.costBeforeDiscount;
+          valB = b.costBeforeDiscount;
+          break;
+        case 'discount':
+          valA = a.discountSizeProc;
+          valB = b.discountSizeProc;
+          break;
+        case 'after':
+        default:
+          valA = a.costAfterDiscount;
+          valB = b.costAfterDiscount;
+          break;
+      }
+
+      return _isAscending ? valA.compareTo(valB) : valB.compareTo(valA);
     });
-  }
+  });
+}
   Widget _getShopLogo(String shopName) {
     String assetPath;
     
@@ -292,13 +342,6 @@ final TextEditingController _searchController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      //   title: Text(widget.title),
-      //   actions: [
-      //     IconButton(onPressed: _getData, icon: const Icon(Icons.refresh))
-      //   ],
-      // ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Stack(
@@ -329,9 +372,47 @@ final TextEditingController _searchController = TextEditingController();
                               ),
                             )
                           ),
-                          const Expanded(flex: 1, child: Text("Before", style: TextStyle(fontWeight: FontWeight.bold))),
-                          const Expanded(flex: 1, child: Text("After", style: TextStyle(fontWeight: FontWeight.bold))),
-                          const Expanded(flex: 1, child: Text("Discount", style: TextStyle(fontWeight: FontWeight.bold))),
+                          Expanded(
+                            flex: 1,
+                            child: InkWell(
+                              onTap: () => _sort('before'),
+                              child: Row(
+                                children: [
+                                  const Text("Before", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  if (_currentSortColumn == 'before')
+                                    Icon(_isAscending ? Icons.arrow_drop_up : Icons.arrow_drop_down, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          Expanded(
+                            flex: 1,
+                            child: InkWell(
+                              onTap: () => _sort('after'),
+                              child: Row(
+                                children: [
+                                  const Text("After", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  if (_currentSortColumn == 'after')
+                                    Icon(_isAscending ? Icons.arrow_drop_up : Icons.arrow_drop_down, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          Expanded(
+                            flex: 1,
+                            child: InkWell(
+                              onTap: () => _sort('discount'),
+                              child: Row(
+                                children: [
+                                  const Text("Discount", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  if (_currentSortColumn == 'discount')
+                                    Icon(_isAscending ? Icons.arrow_drop_up : Icons.arrow_drop_down, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
