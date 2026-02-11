@@ -4,6 +4,7 @@ import 'package:diacritic/diacritic.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:web/web.dart' as web;
+import 'package:flutter/foundation.dart';
 
 class Magazine {
   final int? magazineId;
@@ -159,7 +160,11 @@ class ProductDataSource extends DataTableSource {
   int get selectedRowCount => 0;
 }
 Future<List<ProductAkcija>> fetchProducts() async {
-  final url = Uri.parse('${web.window.location.origin}/api/getDiscounts');
+  final String baseUri = kDebugMode 
+      ? 'http://localhost:6969' 
+      : web.window.location.origin;
+
+  final url = Uri.parse('$baseUri/api/getDiscounts');
   final response = await http.get(url);
 
   if (response.statusCode == 200) {
@@ -182,7 +187,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -257,7 +261,34 @@ final TextEditingController _searchController = TextEditingController();
       _filteredProducts.sort((a, b) => a.costAfterDiscount.compareTo(b.costAfterDiscount));
     });
   }
+  Widget _getShopLogo(String shopName) {
+    String assetPath;
+    
+    // Normalize shop name to lowercase to avoid matching issues
+    switch (shopName.toLowerCase()) {
+      case 'rimi':
+        assetPath = 'assets/images/rimiLogo.png';
+        break;
+      case 'maxima':
+        assetPath = 'assets/images/maximaLogo.png';
+        break;
+      case 'iki':
+        assetPath = 'assets/images/ikiLogo.png';
+        break;
+      case 'cia':
+        assetPath = 'assets/images/ciaLogo.png';
+        break;
+      default:
+        return const Icon(Icons.store, size: 24); // Fallback icon
+    }
 
+    return Image.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 24),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -284,15 +315,26 @@ final TextEditingController _searchController = TextEditingController();
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                       child: Row(
                         children: [
-                          Expanded(flex: 4, child: Text("Name (Found: ${_filteredProducts.length})", style: TextStyle(fontWeight: FontWeight.bold))),
-                          Expanded(flex: 1, child: Text("Shop", style: TextStyle(fontWeight: FontWeight.bold))),
-                          Expanded(flex: 1, child: Text("Before", style: TextStyle(fontWeight: FontWeight.bold))),
-                          Expanded(flex: 1, child: Text("After", style: TextStyle(fontWeight: FontWeight.bold))),
-                          Expanded(flex: 1, child: Text("Discount", style: TextStyle(fontWeight: FontWeight.bold))),
+                          // 1. Matches the Shop Logo width (24)
+                          const SizedBox(width: 24), 
+                          
+                          Expanded(
+                            flex: 4, 
+                            child: Padding(
+                              // 2. Matches the 12.0 padding you added to the product name
+                              padding: const EdgeInsets.symmetric(horizontal: 12.0), 
+                              child: Text(
+                                "Name (Found: ${_filteredProducts.length})", 
+                                style: const TextStyle(fontWeight: FontWeight.bold)
+                              ),
+                            )
+                          ),
+                          const Expanded(flex: 1, child: Text("Before", style: TextStyle(fontWeight: FontWeight.bold))),
+                          const Expanded(flex: 1, child: Text("After", style: TextStyle(fontWeight: FontWeight.bold))),
+                          const Expanded(flex: 1, child: Text("Discount", style: TextStyle(fontWeight: FontWeight.bold))),
                         ],
                       ),
                     ),
-
                     // Product List
                     Expanded(
                       child: _filteredProducts.isEmpty
@@ -309,11 +351,17 @@ final TextEditingController _searchController = TextEditingController();
                                   ),
                                   child: Row(
                                     children: [
+                                      _getShopLogo(item.shopName.toLowerCase()),
                                       Expanded(
                                         flex: 4,
-                                        child: GestureDetector(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                                            child: GestureDetector(
                                           onTap: () async {
-                                            final url = Uri.parse('${web.window.location.origin}/api/getImageByPageId?id=${item.pageId}');
+                                            final String baseUri = kDebugMode 
+                                              ? 'http://localhost:6969' 
+                                              : web.window.location.origin;
+                                            final url = Uri.parse('$baseUri/api/getImageByPageId?id=${item.pageId}');
                                             if (!await launchUrl(url)) {
                                               print('Could not launch $url');
                                             }
@@ -326,11 +374,36 @@ final TextEditingController _searchController = TextEditingController();
                                             ),
                                           ),
                                         ),
+                                      )),
+                                      Expanded(flex: 1, child: Text("${item.costBeforeDiscount == 0 ? "????" : "${item.costBeforeDiscount.toStringAsFixed(2)}€"}", style: TextStyle(
+                                        color: item.costBeforeDiscount == 0 
+                                            ? Colors.orangeAccent 
+                                            : const Color.fromARGB(255, 0, 0, 0),
+                                        fontWeight: item.costAfterDiscount == 0 ? FontWeight.bold : FontWeight.normal,
+                                        ))
                                       ),
-                                      Expanded(flex: 1, child: Text(item.shopName)),
-                                      Expanded(flex: 1, child: Text("${item.costBeforeDiscount}")),
-                                      Expanded(flex: 1, child: Text("${item.costAfterDiscount}")),
-                                      Expanded(flex: 1, child: Text("${item.discountSizeProc == 100 || item.discountSizeProc == 0 ? "????" : item.discountSizeProc}")),
+                                      Expanded(flex: 1, child: Text("${item.costAfterDiscount == 0 ? "????" : "${item.costAfterDiscount.toStringAsFixed(2)}€"}", style: TextStyle(
+                                        color: item.costAfterDiscount == 0 
+                                            ? Colors.orangeAccent 
+                                            : const Color.fromARGB(255, 0, 0, 0),
+                                        fontWeight: item.costAfterDiscount == 0 ? FontWeight.bold : FontWeight.normal,
+                                        )),
+                                      ),
+                                      Expanded(flex: 1, child: Text(
+                                          (item.discountSizeProc == 0 || item.discountSizeProc == 100)
+                                              ? "????"
+                                              : "${item.discountSizeProc.toStringAsFixed(0)}%",
+                                          style: TextStyle(
+                                            // Apply orange only if the value is 0 or 100
+                                            color: (item.discountSizeProc == 0 || item.discountSizeProc == 100)
+                                                ? Colors.orangeAccent
+                                                : Colors.black,
+                                            fontWeight: (item.discountSizeProc == 0 || item.discountSizeProc == 100)
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 );
