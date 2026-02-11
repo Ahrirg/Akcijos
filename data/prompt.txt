@@ -1,0 +1,15 @@
+From the image, find every item with a listed discount.
+For each item, output EXACTLY:
+
+Item_Name;Item_Discount%;Item_Starter_Price->Item_Discounted_Price
+
+Details:
+- Item_Name: text label for the item
+- Item_Discount%: numeric discount percent (like 15%) or it can be 1+1 and similar if that is the case, if none, use null
+- Item_Starter_Price: original price, if none, null
+- Item_Discounted_Price: price after discount, if none, null
+
+Each item MUST be on its own line.
+Do NOT include any extra text, explanation, or formatting.
+If no items detected, return:
+null;null;null->null
