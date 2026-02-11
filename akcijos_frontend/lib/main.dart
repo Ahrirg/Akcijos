@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:diacritic/diacritic.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:web/web.dart' as web;
 
 class Magazine {
   final int? magazineId;
@@ -156,14 +159,12 @@ class ProductDataSource extends DataTableSource {
   int get selectedRowCount => 0;
 }
 Future<List<ProductAkcija>> fetchProducts() async {
-  final url = Uri.parse('http://localhost:6969/api/getDiscounts');
+  final url = Uri.parse('${web.window.location.origin}/api/getDiscounts');
   final response = await http.get(url);
 
   if (response.statusCode == 200) {
-    // 1. Decode the string into a List
     List<dynamic> body = jsonDecode(response.body);
 
-    // 2. Map each item in the list to a ProductAkcija object
     List<ProductAkcija> products = body
         .map((dynamic item) => ProductAkcija.fromJson(item))
         .toList();
@@ -187,40 +188,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Akcijos',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Skibidi sigma akciju website'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -228,14 +204,37 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // Store the actual list of products here
-  List<ProductAkcija> _products = [];
+  List<ProductAkcija> _allProducts = [];      // The "master" list
+List<ProductAkcija> _filteredProducts = []; // The "visible" list
+final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _getData(); // Auto-fetch on start
+    _getData();
+  }
+
+  void _runFilter(String enteredKeyword) {
+    List<ProductAkcija> results = [];
+    
+    if (enteredKeyword.isEmpty) {
+      results = _allProducts;
+    } else {
+      // Normalize the search keyword once
+      String normalizedKeyword = removeDiacritics(enteredKeyword.toLowerCase());
+
+      results = _allProducts.where((product) {
+        // Normalize the product name for comparison
+        String normalizedName = removeDiacritics(product.productName.toLowerCase());
+        
+        return normalizedName.contains(normalizedKeyword);
+      }).toList();
+    }
+
+    setState(() {
+      _filteredProducts = results;
+    });
   }
 
   void _getData() async {
@@ -243,73 +242,128 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       final products = await fetchProducts();
       setState(() {
-        _products = products;
+        _allProducts = products;
+        _filteredProducts = products; // Sync both on initial load
         _isLoading = false;
+        _sortByPrice();
       });
     } catch (e) {
       print("Error: $e");
       setState(() => _isLoading = false);
-      // Optional: Show a snackbar error to the user
     }
+  }
+  void _sortByPrice() {
+    setState(() {
+      _filteredProducts.sort((a, b) => a.costAfterDiscount.compareTo(b.costAfterDiscount));
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-        actions: [
-          // Refresh button in the top bar
-          IconButton(onPressed: _getData, icon: const Icon(Icons.refresh))
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      //   title: Text(widget.title),
+      //   actions: [
+      //     IconButton(onPressed: _getData, icon: const Icon(Icons.refresh))
+      //   ],
+      // ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // Show loader
-          : Column(
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
               children: [
-                // 1. Fixed Header
-                Container(
-                  color: Colors.grey[200],
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  child: const Row(
-                    children: [
-                      Expanded(flex: 2, child: Text("Name", style: TextStyle(fontWeight: FontWeight.bold))),
-                      Expanded(flex: 1, child: Text("Before", style: TextStyle(fontWeight: FontWeight.bold))),
-                      Expanded(flex: 1, child: Text("After", style: TextStyle(fontWeight: FontWeight.bold))),
-                      Expanded(flex: 1, child: Text("Shop", style: TextStyle(fontWeight: FontWeight.bold))),
-                      Expanded(flex: 1, child: Text("Discount size", style: TextStyle(fontWeight: FontWeight.bold))),
-                    ],
-                  ),
+                // Layer 1: The Main Content
+                Column(
+                  children: [
+                    // Spacing so the floating bar doesn't cover the header
+                    const SizedBox(height: 70), 
+                    
+                    // Table Header
+                    Container(
+                      color: Colors.grey[200],
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                      child: Row(
+                        children: [
+                          Expanded(flex: 4, child: Text("Name (Found: ${_filteredProducts.length})", style: TextStyle(fontWeight: FontWeight.bold))),
+                          Expanded(flex: 1, child: Text("Shop", style: TextStyle(fontWeight: FontWeight.bold))),
+                          Expanded(flex: 1, child: Text("Before", style: TextStyle(fontWeight: FontWeight.bold))),
+                          Expanded(flex: 1, child: Text("After", style: TextStyle(fontWeight: FontWeight.bold))),
+                          Expanded(flex: 1, child: Text("Discount", style: TextStyle(fontWeight: FontWeight.bold))),
+                        ],
+                      ),
+                    ),
+
+                    // Product List
+                    Expanded(
+                      child: _filteredProducts.isEmpty
+                          ? const Center(child: Text("No products found."))
+                          : ListView.builder(
+                              itemCount: _filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final item = _filteredProducts[index];
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                                    color: index.isEven ? Colors.white : Colors.grey[50],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 4,
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            final url = Uri.parse('${web.window.location.origin}/api/getImageByPageId?id=${item.pageId}');
+                                            if (!await launchUrl(url)) {
+                                              print('Could not launch $url');
+                                            }
+                                          },
+                                          child: Text(
+                                            item.productName,
+                                            style: const TextStyle(
+                                              color: Colors.blue, // Makes it look like a link
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(flex: 1, child: Text(item.shopName)),
+                                      Expanded(flex: 1, child: Text("${item.costBeforeDiscount}")),
+                                      Expanded(flex: 1, child: Text("${item.costAfterDiscount}")),
+                                      Expanded(flex: 1, child: Text("${item.discountSizeProc == 100 || item.discountSizeProc == 0 ? "????" : item.discountSizeProc}")),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
 
-                // 2. High-Performance Scrolling List
-                Expanded(
-                  child: _products.isEmpty
-                      ? const Center(child: Text("No products found."))
-                      : ListView.builder(
-                          itemCount: _products.length,
-                          itemBuilder: (context, index) {
-                            final item = _products[index];
-                            return Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-                                // Zebra stripes for readability
-                                color: index.isEven ? Colors.white : Colors.grey[50],
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(flex: 2, child: Text(item.productName)),
-                                  Expanded(flex: 1, child: Text("${item.costBeforeDiscount}")),
-                                  Expanded(flex: 1, child: Text("${item.costAfterDiscount}")),
-                                  Expanded(flex: 1, child: Text(item.shopName)),
-                                  Expanded(flex: 1, child: Text("${item.discountSizeProc}")),
-                                ],
-                              ),
-                            );
-                          },
+                // Layer 2: The Floating Search Bar
+                Positioned(
+                  top: 10,
+                  left: 15,
+                  right: 15,
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(30),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search products...',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
                         ),
+                      ),
+                      controller: _searchController,
+                      onChanged: (value) => _runFilter(value),
+                    ),
+                  ),
                 ),
               ],
             ),
