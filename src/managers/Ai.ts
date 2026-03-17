@@ -38,19 +38,53 @@ export async function getItemDiscountsFromImage(
 function isProductArray(data: unknown): data is LLM_Product[] {
   if (!Array.isArray(data)) return false;
 
-  return data.every(item => {
+  let nullCount = 0;
+  let totalPriceFields = 0;
+
+  for (const item of data) {
     if (typeof item !== "object" || item === null) return false;
 
     const obj = item as Record<string, unknown>;
 
-    return (
-      typeof obj.product_name === "string" &&
-      typeof obj.price_before_discount === "number" &&
-      Number.isFinite(obj.price_before_discount) &&
-      typeof obj.price_after_discount === "number" &&
-      Number.isFinite(obj.price_after_discount)
-    );
-  });
+    if (typeof obj.product_name !== "string") return false;
+
+    const before = obj.price_before_discount;
+    const after = obj.price_after_discount;
+
+    totalPriceFields += 2;
+
+    if (before === null) {
+      nullCount++;
+    } else if (typeof before !== "number" || !Number.isFinite(before)) {
+      return false;
+    }
+
+    if (after === null) {
+      nullCount++;
+    } else if (typeof after !== "number" || !Number.isFinite(after)) {
+      return false;
+    }
+  }
+
+  // if >70% of price fields are null → reject
+  if (nullCount / totalPriceFields > 0.7) {
+    return false;
+  }
+
+  // normalize null → 0
+  for (const item of data) {
+    const obj = item as Record<string, unknown>;
+
+    if (obj.price_before_discount === null) {
+      obj.price_before_discount = 0.0;
+    }
+
+    if (obj.price_after_discount === null) {
+      obj.price_after_discount = 0.0;
+    }
+  }
+
+  return true;
 }
 
 function parseProducts(jsonText: string): LLM_Product[] | undefined {
@@ -61,12 +95,12 @@ function parseProducts(jsonText: string): LLM_Product[] | undefined {
   try {
     parsed = JSON.parse(jsonText);
   } catch {
-    console.error("LLM returned bad output");
+    console.error("LLM returned bad output (bad json)");
     return undefined;
   }
 
   if (!isProductArray(parsed)) {
-    console.error("LLM returned bad output");
+    console.error("LLM returned bad output (not an product array)");
     return undefined;
   }
 
