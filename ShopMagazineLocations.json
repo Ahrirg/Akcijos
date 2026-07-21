@@ -1,0 +1,100 @@
+{
+    "shops": [
+        {
+            "name": "Maxima",
+            "url": "https://www.raskakcija.lt/maxima-akcijos.htm"
+        },
+        {
+            "name": "Iki",
+            "url": "https://www.raskakcija.lt/iki-akcijos.htm"
+        },
+        {
+            "name": "Lidl",
+            "url": "https://www.raskakcija.lt/lidl-akcijos.htm"
+        },
+        {
+            "name": "Norfa",
+            "url": "https://www.raskakcija.lt/norfa-akcijos.htm"
+        },
+        {
+            "name": "Rimi",
+            "url": "https://www.raskakcija.lt/rimi-akcijos.htm"
+        },
+        {
+            "name": "Silas",
+            "url": "https://www.raskakcija.lt/silas-akcijos.htm"
+        },
+        {
+            "name": "Aiba",
+            "url": "https://www.raskakcija.lt/aibe-akcijos.htm"
+        },
+        {
+            "name": "Vynoteka",
+            "url": "https://www.raskakcija.lt/vynoteka-akcijos.htm"
+        },
+        {
+            "name": "Cia",
+            "url": "https://www.raskakcija.lt/cia-akcijos.htm"
+        },
+        {
+            "name": "Express",
+            "url": "https://www.raskakcija.lt/express-market-akcijos.htm"
+        },
+        {
+            "name": "Gruste",
+            "url": "https://www.raskakcija.lt/gruste-akcijos.htm"
+        },
+        {
+            "name": "Senukai",
+            "url": "https://www.raskakcija.lt/senukai-akcijos.htm"
+        },
+        {
+            "name": "Ermitazas",
+            "url": "https://www.raskakcija.lt/ermitazas-akcijos.htm"
+        },
+        {
+            "name": "Jyst",
+            "url": "https://www.raskakcija.lt/jysk-akcijos.htm"
+        },
+        {
+            "name": "MokiVezi",
+            "url": "https://www.raskakcija.lt/moki-vezi-akcijos.htm"
+        },
+        {
+            "name": "Pepco",
+            "url": "https://www.raskakcija.lt/pepco-akcijos.htm"
+        },
+        {
+            "name": "Bikuva",
+            "url": "https://www.raskakcija.lt/bikuva-akcijos.htm"
+        },
+        {
+            "name": "TopoCentras",
+            "url": "https://www.raskakcija.lt/topo-centras-akcijos.htm"
+        },
+        {
+            "name": "Eurokos",
+            "url": "https://www.raskakcija.lt/eurokos-akcijos.htm"
+        },
+        {
+            "name": "Drogas",
+            "url": "https://www.raskakcija.lt/drogas-akcijos.htm"
+        },
+        {
+            "name": "Eurovaistine",
+            "url": "https://www.raskakcija.lt/eurovaistine-akcijos.htm"
+        },
+        {
+            "name": "Camelia",
+            "url": "https://www.raskakcija.lt/camelia-akcijos.htm"
+        },
+        {
+            "name": "Gintarine",
+            "url": "https://www.raskakcija.lt/gintarine-vaistine-akcijos.htm"
+        },
+        {
+            "name": "NorfosVaistine",
+            "url": "https://www.raskakcija.lt/norfa-vaistine-akcijos.htm"
+        }
+    ]
+}

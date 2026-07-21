@@ -4,6 +4,7 @@ import { v5 as uuidv5 } from 'uuid';
 import { insertMagazine, insertPage } from "../utils/db";
 import { Page, Magazine } from "../types/DiscountTypes";
 import { savePageImage } from "../utils/Temp";
+import { readFile } from "fs/promises";
 
 const MY_NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341';
 export interface MagazineLink {
@@ -11,27 +12,84 @@ export interface MagazineLink {
   title: string;
 }
 
-
-async function imageUrlToBase64(url: string): Promise<Buffer | undefined> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    console.error("Failed to fetch image");
-    return ;
-  }
-
-  const buffer = await response.arrayBuffer();
-  return Buffer.from(buffer);
+interface ShopData {
+  name: string,
+  url: string
+}
+interface ShopDataList {
+  shops: Array<ShopData>
 }
 
-async function pageUrlToText(url: string): Promise<string> {
-  const response = await fetch(url);
 
-  if (!response.ok) {
-    console.error(`Failed to fetch HTML page: ${response.status}`);
-    return "";
+async function imageUrlToBase64(
+  url: string,
+  retries = 4
+): Promise<Buffer | undefined> {
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0"
+        }
+      });
+
+      if (!response.ok) {
+        console.error(
+          `Image HTTP ${response.status}: ${url}`
+        );
+        return undefined;
+      }
+
+      const buffer = await response.arrayBuffer();
+      return Buffer.from(buffer);
+
+    } catch (err) {
+      console.error(
+        `Image download failed ${attempt}/${retries}: ${url}`,
+        err instanceof Error ? err.message : err
+      );
+
+      if (attempt < retries) {
+        await sleep(attempt * 2000);
+      }
+    }
   }
 
-  return await response.text();
+  console.error(`Giving up on image: ${url}`);
+  return undefined;
+}
+
+async function pageUrlToText(url: string, retries = 3): Promise<string> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0"
+        },
+        timeout: 15000
+      } as any);
+
+      if (!response.ok) {
+        console.error(`HTTP ${response.status} for ${url}`);
+        return "";
+      }
+
+      return await response.text();
+
+    } catch (err) {
+      console.error(
+        `Fetch failed (${attempt}/${retries}) ${url}:`,
+        err instanceof Error ? err.message : err
+      );
+
+      if (attempt < retries) {
+        await sleep(2000 * attempt);
+      }
+    }
+  }
+
+  return "";
 }
 
 
@@ -147,13 +205,7 @@ function findMagazineLinks(html: string): MagazineLink[] {
   return Array.from(new Map(results.map(item => [item.url, item])).values());
 }
 
-async function findAllCurrentMagazinesForAShop(ShopName: string) {
-  const ShopUrl = await findUrlByShopName(ShopName);
-  if (!ShopUrl) {
-    console.error("Shop url was not found");
-    return;
-  }
-
+async function findAllCurrentMagazinesForAShop(ShopName: string, ShopUrl: string) {
   const HtmlRawData = await pageUrlToText(ShopUrl);
 
   const magazineLinks = findMagazineLinks(HtmlRawData);
@@ -165,11 +217,26 @@ async function findAllCurrentMagazinesForAShop(ShopName: string) {
   }
 }
 
+async function loadShopData(): Promise<ShopDataList> {
+  const file = await readFile("./ShopMagazineLocations.json", "utf-8");
+  return JSON.parse(file) as ShopDataList;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 export async function updateDatabase() {
-  await findAllCurrentMagazinesForAShop("Maxima");
-  await findAllCurrentMagazinesForAShop("Iki");
-  await findAllCurrentMagazinesForAShop("Rimi");
-  await findAllCurrentMagazinesForAShop("Lidl");
-  await findAllCurrentMagazinesForAShop("Cia");
+  const ShopData = await loadShopData();
+
+  ShopData.shops.forEach(async element => {
+    await findAllCurrentMagazinesForAShop(element.name, element.url);
+    await sleep(1000);
+  });
+
+  // await findAllCurrentMagazinesForAShop("Maxima");
+  // await findAllCurrentMagazinesForAShop("Iki");
+  // await findAllCurrentMagazinesForAShop("Rimi");
+  // await findAllCurrentMagazinesForAShop("Lidl");
+  // await findAllCurrentMagazinesForAShop("Cia");
 }

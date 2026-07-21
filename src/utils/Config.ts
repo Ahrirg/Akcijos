@@ -7,5 +7,6 @@ export const CONFIG = {
   PORT: Number(process.env.PORT) || 3000,
   OLLAMA_SERVER: process.env.OLLAMA_SERVER || "http://localhost:11434",
   GOOGLE_API: process.env.GOOGLE_API,
-  AI_TYPE: process.env.AI_TYPE
-};
+  AI_TYPE: process.env.AI_TYPE,
+  GOOGLE_AI_NAME: process.env.GOOGLE_AI_NAME
+}

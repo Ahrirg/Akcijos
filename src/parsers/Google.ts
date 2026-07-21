@@ -13,7 +13,7 @@ const prompt: string = fs.readFileSync(
 
 async function GoogleApi(imageBytes: Buffer): Promise<string> {
     const response = await ai.models.generateContent({
-        model: "gemma-3-27b-it",
+        model: CONFIG.GOOGLE_AI_NAME as string,
         contents: [
             {
                 inlineData: {
