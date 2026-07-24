@@ -228,22 +228,46 @@ class _MyHomePageState extends State<MyHomePage> {
       results = _allProducts;
     } else {
       List<String> allShops = [];
-      if (enteredKeyword.toLowerCase().contains("maxima")) {
-        allShops.add("maxima");
-        enteredKeyword = enteredKeyword.replaceAll("maxima", "");
+
+      final shopNames = [
+        "maxima",
+        "iki",
+        "lidl",
+        "norfa",
+        "rimi",
+        "silas",
+        "aibe",
+        "vynoteka",
+        "cia",
+        "express",
+        "gruste",
+        "senukai",
+        "ermitazas",
+        "jysk",
+        "mokivezi",
+        "pepco",
+        "bikuva",
+        "topocentras",
+        "eurokos",
+        "drogas",
+        "eurovaistine",
+        "camelia",
+        "gintarine",
+        "norfosvaistine",
+      ];
+
+      final lowerKeyword = enteredKeyword.toLowerCase();
+
+      for (final shop in shopNames) {
+        if (lowerKeyword.contains(shop)) {
+          allShops.add(shop);
+          enteredKeyword = enteredKeyword.replaceAll(
+            RegExp(shop, caseSensitive: false),
+            "",
+          );
+        }
       }
-      if (enteredKeyword.toLowerCase().contains("iki")) {
-        allShops.add("iki");
-        enteredKeyword = enteredKeyword.replaceAll("iki", "");
-      }
-      if (enteredKeyword.toLowerCase().contains("rimi")) {
-        allShops.add("rimi");
-        enteredKeyword = enteredKeyword.replaceAll("rimi", "");
-      }
-      if (enteredKeyword.toLowerCase().contains("cia")) {
-        allShops.add("cia");
-        enteredKeyword = enteredKeyword.replaceAll("cia", "");
-      }
+
       enteredKeyword = enteredKeyword.trim();
 
       String normalizedKeyword = removeDiacritics(enteredKeyword.toLowerCase());
@@ -312,31 +336,13 @@ class _MyHomePageState extends State<MyHomePage> {
   });
 }
   Widget _getShopLogo(String shopName) {
-    String assetPath;
-    
-    // Normalize shop name to lowercase to avoid matching issues
-    switch (shopName.toLowerCase()) {
-      case 'rimi':
-        assetPath = 'assets/images/rimiLogo.png';
-        break;
-      case 'maxima':
-        assetPath = 'assets/images/maximaLogo.png';
-        break;
-      case 'iki':
-        assetPath = 'assets/images/ikiLogo.png';
-        break;
-      case 'cia':
-        assetPath = 'assets/images/ciaLogo.png';
-        break;
-      default:
-        return const Icon(Icons.store, size: 24); // Fallback icon
-    }
-
     return Image.asset(
-      assetPath,
+      'assets/images/${shopName.toLowerCase()}Logo.png',
       width: 24,
       height: 24,
-      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 24),
+      errorBuilder: (context, error, stackTrace) {
+        return const Icon(Icons.store, size: 24);
+      },
     );
   }
   @override
